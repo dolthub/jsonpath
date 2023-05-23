@@ -143,6 +143,13 @@ func (c *Compiled) Lookup(obj interface{}) (interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
+			if obj == nil {
+				continue
+			}
+			// empty scan is NULL
+			if len(obj.([]interface{})) == 0 {
+				obj = nil
+			}
 		default:
 			return nil, fmt.Errorf("unsupported jsonpath operation: %s", s.op)
 		}
@@ -557,7 +564,7 @@ func get_filtered(obj, root interface{}, filter string) ([]interface{}, error) {
 
 func get_scan(obj interface{}) (interface{}, error) {
 	if reflect.TypeOf(obj) == nil {
-		return nil, ErrGetFromNullObj
+		return nil, nil
 	}
 	switch reflect.TypeOf(obj).Kind() {
 	case reflect.Map:
