@@ -76,7 +76,7 @@ func (c *Compiled) String() string {
 func (c *Compiled) Lookup(obj interface{}) (interface{}, error) {
 	var err error
 	for _, s := range c.steps {
-		// "key", "idx"
+		// "key", "idx", "range", "filter", "scan"
 		switch s.op {
 		case "key":
 			obj, err = get_key(obj, s.key)
@@ -135,6 +135,11 @@ func (c *Compiled) Lookup(obj interface{}) (interface{}, error) {
 				return nil, err
 			}
 			obj, err = get_filtered(obj, obj, s.args.(string))
+			if err != nil {
+				return nil, err
+			}
+		case "scan":
+			obj, err = get_scan(obj)
 			if err != nil {
 				return nil, err
 			}
@@ -548,6 +553,40 @@ func get_filtered(obj, root interface{}, filter string) ([]interface{}, error) {
 	}
 
 	return res, nil
+}
+
+func get_scan(obj interface{}) (interface{}, error) {
+	if reflect.TypeOf(obj) == nil {
+		return nil, ErrGetFromNullObj
+	}
+	switch reflect.TypeOf(obj).Kind() {
+	case reflect.Map:
+		var res []interface{}
+		if jsonMap, ok := obj.(map[string]interface{}); ok {
+			for _, v := range jsonMap {
+				res = append(res, v)
+			}
+			return res, nil
+		}
+		for _, kv := range reflect.ValueOf(obj).MapKeys() {
+			res = append(res, reflect.ValueOf(obj).MapIndex(kv).Interface())
+		}
+		return res, nil
+	case reflect.Slice:
+		// slice we should get from all objects in it.
+		var res []interface{}
+		for i := 0; i < reflect.ValueOf(obj).Len(); i++ {
+			tmp := reflect.ValueOf(obj).Index(i).Interface()
+			newObj, err := get_scan(tmp)
+			if err != nil {
+				return nil, err
+			}
+			res = append(res, newObj.([]interface{})...)
+		}
+		return res, nil
+	default:
+		return nil, fmt.Errorf("object is not scanable: %v", reflect.TypeOf(obj).Kind())
+	}
 }
 
 // @.isbn                 => @.isbn, exists, nil

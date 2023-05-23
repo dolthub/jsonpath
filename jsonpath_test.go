@@ -537,6 +537,92 @@ func Test_jsonpath_get_range(t *testing.T) {
 	}
 }
 
+func Test_jsonpath_get_scan(t *testing.T) {
+	obj := map[string]interface{}{
+		"key": 1,
+	}
+	res, err := get_scan(obj)
+	fmt.Println(err, res)
+	if err != nil {
+		t.Errorf("failed to scan: %v", err)
+		return
+	}
+	if res.([]interface{})[0] != 1 {
+		t.Errorf("scanned value is not 1: %v", res)
+		return
+	}
+
+	obj2 := 1
+	res, err = get_scan(obj2)
+	fmt.Println(err, res)
+	if err == nil {
+		t.Errorf("object is not scanable error not raised")
+		return
+	}
+
+	obj3 := map[string]string{"key1": "hah1", "key2": "hah2", "key3": "hah3"}
+	res, err = get_scan(obj3)
+	if err != nil {
+		t.Errorf("failed to scan: %v", err)
+		return
+	}
+	res_v, ok := res.([]interface{})
+	if !ok {
+		t.Errorf("scanned result is not a slice")
+	}
+	if len(res_v) != 3 {
+		t.Errorf("scanned result is of wrong length")
+	}
+	// order of items in maps can't be guaranteed
+	for _, v := range res_v {
+		val, _ := v.(string)
+		if val != "hah1" && val != "hah2" && val != "hah3" {
+			t.Errorf("scanned result contains unexpected value: %v", val)
+		}
+	}
+
+	obj4 := map[string]interface{}{
+		"key1" : "abc",
+		"key2" : 123,
+		"key3" : map[string]interface{}{
+			"a": 1,
+			"b": 2,
+			"c": 3,
+		},
+		"key4" : []interface{}{1,2,3},
+	}
+	res, err = get_scan(obj4)
+	res_v, ok = res.([]interface{})
+	if !ok {
+		t.Errorf("scanned result is not a slice")
+	}
+	if len(res_v) != 4 {
+		t.Errorf("scanned result is of wrong length")
+	}
+	// order of items in maps can't be guaranteed
+	for _, v := range res_v {
+		switch v.(type) {
+		case string:
+			if v_str, ok := v.(string); ok && v_str == "abc" {
+				continue
+			}
+		case int:
+			if v_int, ok := v.(int); ok && v_int == 123 {
+				continue
+			}
+		case map[string]interface{}:
+			if v_map, ok := v.(map[string]interface{}); ok && v_map["a"].(int) == 1 && v_map["b"].(int) == 2 && v_map["c"].(int) == 3 {
+				continue
+			}
+		case []interface{}:
+			if v_slice, ok := v.([]interface{}); ok && v_slice[0].(int) == 1 && v_slice[1].(int) == 2 && v_slice[2].(int) == 3 {
+				continue
+			}
+		}
+		t.Errorf("scanned result contains unexpected value: %v", v)
+	}
+}
+
 func Test_jsonpath_types_eval(t *testing.T) {
 	fset := token.NewFileSet()
 	res, err := types.Eval(fset, nil, 0, "1 < 2")
