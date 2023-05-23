@@ -568,8 +568,9 @@ func get_scan(obj interface{}) (interface{}, error) {
 			}
 			return res, nil
 		}
-		for _, kv := range reflect.ValueOf(obj).MapKeys() {
-			res = append(res, reflect.ValueOf(obj).MapIndex(kv).Interface())
+		iter := reflect.ValueOf(obj).MapRange()
+		for iter.Next() {
+			res = append(res, iter.Value().Interface())
 		}
 		return res, nil
 	case reflect.Slice:
