@@ -144,7 +144,7 @@ func (c *Compiled) Lookup(obj interface{}) (interface{}, error) {
 				return nil, err
 			}
 		default:
-			return nil, fmt.Errorf("expression don't support in filter")
+			return nil, fmt.Errorf("unsupported operation: %s", s.op)
 		}
 	}
 	return obj, nil
@@ -359,7 +359,7 @@ func filter_get_from_explicit_path(obj interface{}, path string) (interface{}, e
 				return nil, err
 			}
 		default:
-			return nil, fmt.Errorf("expression don't support in filter")
+			return nil, fmt.Errorf("unsupported operation %s in filter", op)
 		}
 	}
 	return xobj, nil
