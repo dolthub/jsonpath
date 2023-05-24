@@ -590,13 +590,14 @@ func Test_jsonpath_get_scan(t *testing.T) {
 			"c": 3,
 		},
 		"key4" : []interface{}{1,2,3},
+		"key5" : nil,
 	}
 	res, err = get_scan(obj4)
 	res_v, ok = res.([]interface{})
 	if !ok {
 		t.Errorf("scanned result is not a slice")
 	}
-	if len(res_v) != 4 {
+	if len(res_v) != 5 {
 		t.Errorf("scanned result is of wrong length")
 	}
 	// order of items in maps can't be guaranteed
@@ -618,6 +619,8 @@ func Test_jsonpath_get_scan(t *testing.T) {
 			if v_slice, ok := v.([]interface{}); ok && v_slice[0].(int) == 1 && v_slice[1].(int) == 2 && v_slice[2].(int) == 3 {
 				continue
 			}
+		case nil:
+			continue
 		}
 		t.Errorf("scanned result contains unexpected value: %v", v)
 	}
