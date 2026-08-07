@@ -116,7 +116,7 @@ func Test_jsonpath_JsonPathLookup_1(t *testing.T) {
 	if res_v, ok := res.([]interface{}); ok != true || res_v[0].(float64) != 8.95 || res_v[1].(float64) != 12.99 || res_v[2].(float64) != 8.99 || res_v[3].(float64) != 22.99 {
 		t.Errorf("exp: [8.95, 12.99, 8.99, 22.99], got: %v", res)
 	}
-	
+
 	// range
 	res, err = JsonPathLookup(json_data, "$.store.book[0:1].price")
 	t.Log(err, res)
@@ -131,6 +131,25 @@ func Test_jsonpath_JsonPathLookup_1(t *testing.T) {
 		if res_v[0].(string) != "Sayings of the Century" || res_v[1].(string) != "Sword of Honour" {
 			t.Errorf("title are wrong: %v", res)
 		}
+	}
+
+	// null input
+	res, err = JsonPathLookup(nil, "$.store")
+	if err == nil {
+		t.Errorf("expected error from nil json data")
+	}
+
+	res, err = JsonPathLookup(nil, "$[*]")
+	if err == nil {
+		t.Errorf("expected error from nil json data")
+	}
+
+	res, err = JsonPathLookup(nil, "$")
+	if err != nil {
+		t.Errorf("unexpected error for JsonPathLookup(nil, \"$\"): %s", err.Error())
+	}
+	if res != nil {
+		t.Errorf("exp: nil, got: %v", res)
 	}
 }
 
@@ -588,15 +607,15 @@ func Test_jsonpath_get_scan(t *testing.T) {
 	}
 
 	obj4 := map[string]interface{}{
-		"key1" : "abc",
-		"key2" : 123,
-		"key3" : map[string]interface{}{
+		"key1": "abc",
+		"key2": 123,
+		"key3": map[string]interface{}{
 			"a": 1,
 			"b": 2,
 			"c": 3,
 		},
-		"key4" : []interface{}{1,2,3},
-		"key5" : nil,
+		"key4": []interface{}{1, 2, 3},
+		"key5": nil,
 	}
 	res, err = get_scan(obj4)
 	res_v, ok = res.([]interface{})

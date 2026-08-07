@@ -23,7 +23,6 @@ import (
 var ErrGetFromNullObj = errors.New("get attribute from null object")
 var ErrKeyError = errKind.NewKind("key error: %s not found in object")
 
-
 func JsonPathLookup(obj interface{}, jpath string) (interface{}, error) {
 	c, err := Compile(jpath)
 	if err != nil {
@@ -264,7 +263,7 @@ func tokenize(query string) ([]string, error) {
 }
 
 /*
- op: "root", "key", "idx", "range", "filter", "scan"
+op: "root", "key", "idx", "range", "filter", "scan"
 */
 func parse_token(token string) (op string, key string, args interface{}, err error) {
 	if token == "$" {
@@ -441,7 +440,11 @@ func get_idx(obj interface{}, idx int) (interface{}, error) {
 }
 
 func get_range(obj, frm, to interface{}) (interface{}, error) {
-	switch reflect.TypeOf(obj).Kind() {
+	typeOfObj := reflect.TypeOf(obj)
+	if typeOfObj == nil {
+		return nil, ErrGetFromNullObj
+	}
+	switch typeOfObj.Kind() {
 	case reflect.Slice:
 		length := reflect.ValueOf(obj).Len()
 		_frm := 0
