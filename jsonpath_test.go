@@ -381,7 +381,7 @@ func Test_jsonpath_parse_token(t *testing.T) {
 
 		if op == "filter" {
 			if args_v, ok := args.(string); ok == true {
-				t.Logf(args_v)
+				t.Logf("%v", args_v)
 				if exp_args.(string) != args_v {
 					t.Errorf("len(args) not expected: (got)%v != (exp)%v", len(args_v), len(exp_args.([]string)))
 					return
@@ -1313,4 +1313,42 @@ func Test_jsonpath_rootnode_is_nested_array_range(t *testing.T) {
 	//if ares[1].(float64) != 3.1 {
 	//	t.Fatal("idx: 0, should be 3.1, got: %v", ares[1])
 	//}
+}
+
+func TestNullSliceLookup(t *testing.T) {
+	data := `{ "abc": null }`
+
+	var j any
+	err := json.Unmarshal([]byte(data), &j)
+	if err != nil {
+		t.Fatal("err:", err)
+	}
+
+	res, err := JsonPathLookup(j, "$.abc[0]")
+	t.Log(res, err)
+	if err != nil {
+		t.Fatal("err:", err)
+	}
+	if res != nil {
+		t.Fatal("res is not nil")
+	}
+}
+
+func TestNestedNullSliceLookup(t *testing.T) {
+	data := `{ "abc": [ null ] }`
+
+	var j any
+	err := json.Unmarshal([]byte(data), &j)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := JsonPathLookup(j, "$.abc[0][0]")
+	t.Log(res, err)
+	if err != nil {
+		t.Fatal("err:", err)
+	}
+	if res != nil {
+		t.Fatal("res is not nil")
+	}
 }

@@ -98,26 +98,30 @@ func (c *Compiled) Lookup(obj interface{}) (interface{}, error) {
 					return nil, err
 				}
 			}
-
-			if len(s.args.([]int)) > 1 {
-				res := []interface{}{}
-				for _, x := range s.args.([]int) {
-					//fmt.Println("idx ---- ", x)
-					tmp, err := get_idx(obj, x)
-					if err != nil {
-						return nil, err
-					}
-					res = append(res, tmp)
-				}
-				obj = res
-			} else if len(s.args.([]int)) == 1 {
-				//fmt.Println("idx ----------------3")
-				obj, err = get_idx(obj, s.args.([]int)[0])
+			if obj == nil {
+				return nil, nil
+			}
+			args, ok := s.args.([]int)
+			if !ok {
+				return nil, nil
+			}
+			argLen := len(args)
+			switch {
+			case argLen == 1:
+				obj, err = get_idx(obj, args[0])
 				if err != nil {
 					return nil, err
 				}
-			} else {
-				//fmt.Println("idx ----------------4")
+			case argLen > 1:
+				res := make([]any, argLen)
+				for i, x := range args {
+					res[i], err = get_idx(obj, x)
+					if err != nil {
+						return nil, err
+					}
+				}
+				obj = res
+			default:
 				return nil, fmt.Errorf("cannot index on empty slice")
 			}
 		case "range":
