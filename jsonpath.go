@@ -98,6 +98,9 @@ func (c *Compiled) Lookup(obj interface{}) (interface{}, error) {
 					return nil, err
 				}
 			}
+			if obj == nil {
+				return nil, nil
+			}
 			args, ok := s.args.([]int)
 			if !ok {
 				return nil, nil
@@ -105,7 +108,7 @@ func (c *Compiled) Lookup(obj interface{}) (interface{}, error) {
 			argLen := len(args)
 			switch {
 			case argLen == 1:
-				obj, err = get_idx(obj, s.args.([]int)[0])
+				obj, err = get_idx(obj, args[0])
 				if err != nil {
 					return nil, err
 				}
