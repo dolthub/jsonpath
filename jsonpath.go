@@ -415,6 +415,11 @@ func get_key(obj interface{}, key string) (interface{}, error) {
 				res = append(res, v)
 			}
 		}
+		// No successful property lookup is a missing key, not a matched
+		// empty array. Values such as null and [] still count as matches.
+		if len(res) == 0 {
+			return nil, ErrKeyError.New(key)
+		}
 		return res, nil
 	default:
 		return nil, fmt.Errorf("object is not map")
