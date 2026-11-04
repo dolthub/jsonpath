@@ -276,7 +276,7 @@ var parse_token_cases = []map[string]interface{}{
 	},
 	map[string]interface{}{
 		"token": "book[*]",
-		"op":    "range",
+		"op":    "wildcard",
 		"key":   "book",
 		"args":  [2]interface{}{nil, nil},
 	},
@@ -360,7 +360,7 @@ func Test_jsonpath_parse_token(t *testing.T) {
 			}
 		}
 
-		if op == "range" {
+		if op == "range" || op == "wildcard" {
 			if args_v, ok := args.([2]interface{}); ok == true {
 				t.Logf("%v", args_v)
 				exp_from := exp_args.([2]interface{})[0]

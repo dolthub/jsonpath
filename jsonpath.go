@@ -124,12 +124,20 @@ func (c *Compiled) Lookup(obj interface{}) (interface{}, error) {
 			default:
 				return nil, fmt.Errorf("cannot index on empty slice")
 			}
-		case "range":
+		case "range", "wildcard":
 			if len(s.key) > 0 {
 				// no key `$[:1].test`
 				obj, err = get_key(obj, s.key)
 				if err != nil {
 					return nil, err
+				}
+			}
+			// An array wildcard over an empty slice matches no value. Keep this
+			// distinct from selecting an empty array or an explicit range.
+			if s.op == "wildcard" {
+				v := reflect.ValueOf(obj)
+				if v.Kind() == reflect.Slice && v.Len() == 0 {
+					return nil, ErrKeyError.New("[*]")
 				}
 			}
 			if argsv, ok := s.args.([2]interface{}); ok == true {
@@ -322,7 +330,7 @@ func parse_token(token string) (op string, key string, args interface{}, err err
 			args = [2]interface{}{frm, to}
 			return
 		} else if tail == "*" {
-			op = "range"
+			op = "wildcard"
 			args = [2]interface{}{nil, nil}
 			return
 		} else {
