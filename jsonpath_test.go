@@ -1043,14 +1043,8 @@ func Test_jsonpath_num_cmp(t *testing.T) {
 	var j interface{}
 	json.Unmarshal([]byte(data), &j)
 	res, err := JsonPathLookup(j, "$.books[?(@.price > 100)].name")
-	if err != nil {
-		t.Fatal(err)
-	}
-	arr := res.([]interface{})
-	if len(arr) != 0 {
-		t.Fatal("should return [], got: ", arr)
-	}
-
+	assert.True(t, ErrKeyError.Is(err), "expected missing-key error, got %v", err)
+	assert.Nil(t, res)
 }
 
 func BenchmarkJsonPathLookupCompiled(b *testing.B) {
@@ -1350,5 +1344,52 @@ func TestNestedNullSliceLookup(t *testing.T) {
 	}
 	if res != nil {
 		t.Fatal("res is not nil")
+	}
+}
+
+// A property lookup over a selection must distinguish no matching properties
+// from properties whose values are JSON null, empty arrays, or empty objects.
+func TestWildcardPropertyMatches(t *testing.T) {
+	tests := []struct {
+		name     string
+		document string
+		path     string
+		expected string
+	}{
+		{"missing", `[{}]`, `$[*].email`, ""},
+		{"all missing", `[{},{}]`, `$[*].email`, ""},
+		{"non-object candidates", `[null,1,"x",{}]`, `$[*].email`, ""},
+		{"nested array", `{"users":[{}]}`, `$.users[*].email`, ""},
+		{"later leg", `[{}]`, `$[*].email.name`, ""},
+		{"nested selection misses", `[[{}],[{}]]`, `$[*].email`, ""},
+		{"missing then present", `[{}, {"email":"x"}]`, `$[*].email`, `["x"]`},
+		{"present then missing", `[{"email":"x"}, {}]`, `$[*].email`, `["x"]`},
+		{"null value", `[{"email":null}, {}]`, `$[*].email`, `[null]`},
+		{"empty array value", `[{"email":[]}, {}]`, `$[*].email`, `[[]]`},
+		{"empty object value", `[{"email":{}}, {}]`, `$[*].email`, `[{}]`},
+		{"empty root", `[]`, `$`, `[]`},
+		{"empty member", `{"email":[]}`, `$.email`, `[]`},
+		{"null member", `{"email":null}`, `$.email`, `null`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var document interface{}
+			if err := json.Unmarshal([]byte(tt.document), &document); err != nil {
+				t.Fatal(err)
+			}
+			result, err := JsonPathLookup(document, tt.path)
+			if tt.expected == "" {
+				assert.True(t, ErrKeyError.Is(err), "expected missing-key error, got %v", err)
+				assert.Nil(t, result)
+				return
+			}
+			if !assert.NoError(t, err) {
+				return
+			}
+			encoded, err := json.Marshal(result)
+			if assert.NoError(t, err) {
+				assert.JSONEq(t, tt.expected, string(encoded))
+			}
+		})
 	}
 }
